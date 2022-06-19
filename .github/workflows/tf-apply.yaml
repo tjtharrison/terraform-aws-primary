@@ -19,7 +19,7 @@ jobs:
           "website_test_s3"
         ]
       }
-    fail-fast: false
+      fail-fast: false
     steps:
       - uses: actions/checkout@v2
         with:
