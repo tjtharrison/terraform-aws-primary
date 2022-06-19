@@ -15,7 +15,7 @@ jobs:
       matrix: { 
         dirs: [
           "website_s3",
-          "backup_s3"
+          "website_test_s3"
         ]
       }
       # Allow other dirs to continue if one fails

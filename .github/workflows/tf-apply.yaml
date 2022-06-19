@@ -16,9 +16,10 @@ jobs:
       matrix: { 
         dirs: [
           "website_s3",
-          "backup_s3"
+          "website_test_s3"
         ]
       }
+    fail-fast: false
     steps:
       - uses: actions/checkout@v2
         with:
