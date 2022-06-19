@@ -6,7 +6,7 @@ on:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  TERRAFORM_SSH_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+  TERRAFORM_SSH_KEY: ${{ secrets.TERRAFORM_SSH_KEY }}
 jobs:
   process-pr:
     runs-on: self-hosted
