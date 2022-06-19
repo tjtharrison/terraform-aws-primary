@@ -1,0 +1,63 @@
+name: terraform-pr
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  TERRAFORM_SSH_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+jobs:
+  process-pr:
+    runs-on: self-hosted
+    strategy:
+      # Subdirectories to loop over
+      matrix: { 
+        dirs: [
+          "website_s3",
+          "backup_s3"
+        ]
+      }
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.head_ref }}
+      - name: Run Checkov action
+        id: checkov
+        uses: bridgecrewio/checkov-action@master
+        with:
+          skip_check: CKV_AWS_126,CKV_AWS_135
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: eu-west-1
+          role-duration-seconds: 3600
+      - name: Setup Infracost
+        uses: infracost/actions/setup@v1
+        with:
+          api-key: ${{ secrets.INFRACOST_API_TOKEN }}
+          GIT_SSH_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+      - name: Generate plan
+        id: terraform_plan
+        uses: dflook/terraform-plan@v1
+        with:
+          path: ${{ matrix.dirs }}
+      - name: Generate Infracost JSON
+        run: |
+          cat ${{ steps.terraform_plan.outputs.json_plan_path }} > plan.json
+          infracost breakdown --path plan.json --format json --out-file /tmp/infracost.json
+        working-directory: ${{ env.working-directory }}
+      - name: Post Infracost comment
+        run: |
+          infracost comment github --path /tmp/infracost.json \
+            --repo $GITHUB_REPOSITORY \
+            --github-token ${{github.token}} \
+            --pull-request ${{github.event.pull_request.number}} \
+            --behavior update
+      - name: terraform fmt
+        uses: dflook/terraform-fmt-check@v1
+        with:
+          path: ${{ matrix.dirs }}
+      - name: Commit Terraform
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with: 
+          commit_message: "Terraform formatting"

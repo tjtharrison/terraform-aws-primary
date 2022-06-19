@@ -1,0 +1,37 @@
+name: terraform-pr
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**.tf'
+
+jobs:
+  apply:
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TERRAFORM_SSH_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+      TF_VAR_pgp_pub_key: ${{ secrets.PGP_SIGNING_KEY }}
+    runs-on: self-hosted
+    strategy:
+      # Subdirectories to loop over
+      matrix: { 
+        dirs: [
+          "website_s3",
+          "backup_s3"
+        ]
+      }
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.head_ref }}
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: eu-west-1
+          role-duration-seconds: 3600
+
+      - name: terraform apply
+        uses: dflook/terraform-apply@v1
+        with:
+          path: ${{ matrix.dirs }}
