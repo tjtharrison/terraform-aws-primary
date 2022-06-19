@@ -4,24 +4,22 @@ on:
   push:
     branches:
       - main
-    paths:
-      - '**.tf'
 
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  TERRAFORM_SSH_KEY: ${{ secrets.TERRAFORM_SSH_KEY }}
 jobs:
   apply:
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      TERRAFORM_SSH_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
-      TF_VAR_pgp_pub_key: ${{ secrets.PGP_SIGNING_KEY }}
     runs-on: self-hosted
     strategy:
       # Subdirectories to loop over
       matrix: { 
         dirs: [
           "website_s3",
-          "backup_s3"
+          "website_test_s3"
         ]
       }
+    fail-fast: false
     steps:
       - uses: actions/checkout@v2
         with:
