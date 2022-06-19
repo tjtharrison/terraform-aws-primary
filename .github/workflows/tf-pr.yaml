@@ -59,7 +59,3 @@ jobs:
         uses: dflook/terraform-fmt-check@v1
         with:
           path: ${{ matrix.dirs }}
-      - name: Commit Terraform
-        uses: stefanzweifel/git-auto-commit-action@v4
-        with: 
-          commit_message: "Terraform formatting"
