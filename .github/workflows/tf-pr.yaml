@@ -18,6 +18,8 @@ jobs:
           "backup_s3"
         ]
       }
+      # Allow other dirs to continue if one fails
+      fail-fast: false
     steps:
       - uses: actions/checkout@v2
         with:
