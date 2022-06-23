@@ -50,17 +50,15 @@ jobs:
       - name: Generate and post Infracost comment
         run: |
           echo -e "version: 0.1\n\nprojects:\n" > infracost-generated.yml
-          for planjson in $(find /tmp/ -name "plan*"); do
-            echo -e "  - path: $planjson" >> infracost-generated.yml
+          for planjson in $(find / -name "plan*"); do echo -e "  - path: $planjson" >> infracost-generated.yml; done
           done
-          infracost breakdown --config-file=infracost-generated.yml --out-file /tmp/infracost.json
+          infracost breakdown --config-file=infracost-generated.yml --format=json --out-file=infracost_totals.json
 
-          cat /tmp/infracost.json
-          infracost comment github --path /tmp/infracost.json \
-            --repo $GITHUB_REPOSITORY \
-            --github-token ${{github.token}} \
-            --pull-request ${{github.event.pull_request.number}} \
-            --behavior update
+          # infracost comment github --path infracost_totals.json \
+          #   --repo $GITHUB_REPOSITORY \
+          #   --github-token ${{github.token}} \
+          #   --pull-request ${{github.event.pull_request.number}} \
+          #   --behavior update
       - name: terraform fmt
         uses: dflook/terraform-fmt-check@v1
         with:
