@@ -43,13 +43,17 @@ jobs:
         uses: dflook/terraform-plan@v1
         with:
           path: ${{ matrix.dirs }}
-      - name: Generate Infracost JSON
+      - name: Generate plan json for Infracost
         run: |
-          cat ${{ steps.terraform_plan.outputs.json_plan_path }} > plan.json
-          infracost breakdown --path plan.json --format json --out-file /tmp/infracost.json
+          cat ${{ steps.terraform_plan.outputs.json_plan_path }} > /tmp/plan-${{ matrix.dirs }}.json
         working-directory: ${{ env.working-directory }}
-      - name: Post Infracost comment
+      - name: Generate and post Infracost comment
         run: |
+          echo -e "version: 0.1\n\nprojects:\n" > infracost-generated.yml
+          for planjson in $(find /tmp/ -name "plan*"); do
+            echo -e "  - path: $planjson" >> infracost-generated.yml
+          done
+          infracost breakdown --config-file=infracost-generated.yml --out-file /tmp/infracost.json
           infracost comment github --path /tmp/infracost.json \
             --repo $GITHUB_REPOSITORY \
             --github-token ${{github.token}} \
