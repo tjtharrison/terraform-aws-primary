@@ -54,6 +54,8 @@ jobs:
             echo -e "  - path: $planjson" >> infracost-generated.yml
           done
           infracost breakdown --config-file=infracost-generated.yml --out-file /tmp/infracost.json
+
+          cat /tmp/infracost.json
           infracost comment github --path /tmp/infracost.json \
             --repo $GITHUB_REPOSITORY \
             --github-token ${{github.token}} \
