@@ -63,6 +63,7 @@ jobs:
         run: |
           # Generate plans
           for dir in $(find . -type f -name '*.tf' | sed -E 's|/[^/]+$||' | grep -v modules | sort -u | awk -F/ {'print $2'}); do
+            terraform -chdir=$dir init
             terraform -chdir=$dir plan -out tfplan-$dir.binary
             terraform -chdir=$dir show -json tfplan-$dir.binary > plan-$dir.json
           done
