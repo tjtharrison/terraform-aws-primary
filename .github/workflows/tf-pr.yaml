@@ -64,3 +64,45 @@ jobs:
         uses: dflook/terraform-fmt-check@v1
         with:
           path: ${{ matrix.dirs }}
+  pr-infracost:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.head_ref }}
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: eu-west-1
+          role-duration-seconds: 3600
+      - name: Setup Infracost
+        uses: infracost/actions/setup@v1
+        with:
+          api-key: ${{ secrets.INFRACOST_API_TOKEN }}
+          GIT_SSH_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+      - name: Generate and post Infracost comment
+        run: |
+          # Generate plans
+          for dir in $(find . -type f -name '*.tf' | sed -E 's|/[^/]+$||' | grep -v modules | sort -u | awk -F/ {'print $2'}); do
+            terraform -chdir=$dir plan -out tfplan-$dir.binary
+            terraform -chdir=$dir show -json tfplan-$dir.binary > plan-$dir.json
+          done
+          
+          # Build config file
+          echo -e "version: 0.1\n\nprojects:\n" > infracost-generated.yml
+          for planjson in $(find . -name "plan*"); do 
+            echo -e "  - path: $planjson" >> infracost-generated.yml
+          done
+
+          # Generate infracost
+          infracost breakdown --config-file=infracost-generated.yml --format=json --out-file=infracost_totals.json
+
+          # Comment PR
+          infracost comment github --path infracost_totals.json \
+            --repo $GITHUB_REPOSITORY \
+            --github-token ${{github.token}} \
+            --pull-request ${{github.event.pull_request.number}} \
+            --behavior update
+      - name: terraform fmt
+        uses: dflook/terraform-fmt-check@v1
+        with:
+          path: ${{ matrix.dirs }}
