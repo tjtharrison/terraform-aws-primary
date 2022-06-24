@@ -33,33 +33,11 @@ jobs:
         with:
           aws-region: eu-west-1
           role-duration-seconds: 3600
-      - name: Setup Infracost
-        uses: infracost/actions/setup@v1
-        with:
-          api-key: ${{ secrets.INFRACOST_API_TOKEN }}
-          GIT_SSH_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
       - name: Generate plan
         id: terraform_plan
         uses: dflook/terraform-plan@v1
         with:
           path: ${{ matrix.dirs }}
-      - name: Generate plan json for Infracost
-        run: |
-          cat ${{ steps.terraform_plan.outputs.json_plan_path }} > /tmp/plan-${{ matrix.dirs }}.json
-        working-directory: ${{ env.working-directory }}
-      - name: Generate and post Infracost comment
-        run: |
-          echo -e "version: 0.1\n\nprojects:\n" > infracost-generated.yml
-          for planjson in $(find /tmp/ -name "plan*"); do 
-            echo -e "  - path: $planjson" >> infracost-generated.yml
-          done
-          infracost breakdown --config-file=infracost-generated.yml --format=json --out-file=infracost_totals.json
-
-          infracost comment github --path infracost_totals.json \
-            --repo $GITHUB_REPOSITORY \
-            --github-token ${{github.token}} \
-            --pull-request ${{github.event.pull_request.number}} \
-            --behavior update
       - name: terraform fmt
         uses: dflook/terraform-fmt-check@v1
         with:
