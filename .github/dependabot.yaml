@@ -14,4 +14,4 @@ updates:
    registries:
      - github-teamjtharrison
    schedule:
-     interval: "hourly"
+     interval: "daily"
